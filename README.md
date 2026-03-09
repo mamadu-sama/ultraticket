@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🎟️ UltraTicket — Motor de Reserva de Alta Performance
+# 🎟️ UltraTicket: Motor de Reserva de Alta Performance
 
 ### Construído para aguentar o pico. Projetado para nunca vender o mesmo ingresso duas vezes.
 
@@ -27,9 +27,9 @@
 
 **500 mil requisições em 1 minuto. 50 mil ingressos. Zero margem para erro.**
 
-Esse é o cenário do "Pico de Venda" — o momento em que as vendas de um grande show abrem e o sistema é inundado por uma quantidade de tráfego que derrubaria qualquer API mal planejada. O desafio central não é só escalar: é garantir que, sob qualquer condição de concorrência, **o mesmo ingresso nunca seja vendido duas vezes**.
+Esse é o cenário do "Pico de Venda", o momento em que as vendas de um grande show abrem e o sistema é inundado por uma quantidade de tráfego que derrubaria qualquer API mal planejada. O desafio central não é só escalar: é garantir que, sob qualquer condição de concorrência, **o mesmo ingresso nunca seja vendido duas vezes**.
 
-> "Overbooking não é um bug — é uma catástrofe operacional. Este projeto foi construído para que isso seja impossível por design."
+> "Overbooking não é um bug, é uma catástrofe operacional. Este projeto foi construído para que isso seja impossível por design."
 
 ---
 
@@ -41,11 +41,11 @@ O sistema é construído em camadas de proteção. Pense como um funil: cada cam
 Cliente HTTP
      │
      ▼
-[ Redis — Fast Fail & Cache ]  ◀── Primeira linha de defesa
+[ Redis: Fast Fail & Cache ]  ◀── Primeira linha de defesa
      │  Verifica disponibilidade sem tocar no banco
      │  Rejeita imediatamente se estoque = 0
      ▼
-[ PostgreSQL — Pessimistic Lock ]  ◀── Garantia absoluta de consistência
+[ PostgreSQL: Pessimistic Lock ]  ◀── Garantia absoluta de consistência
      │  SELECT FOR UPDATE no registro do lote
      │  Atomicidade via @Transactional
      ▼
@@ -54,7 +54,7 @@ Cliente HTTP
 
 ---
 
-### 1. 🛡️ Primeira Linha de Defesa — Redis como Guardião do Estoque
+### 1. 🛡️ Primeira Linha de Defesa: Redis como Guardião do Estoque
 
 Antes de qualquer operação no banco, o estoque é consultado e decrementado **atomicamente no Redis** usando o comando `DECR`, que é thread-safe por natureza.
 
@@ -62,7 +62,7 @@ Antes de qualquer operação no banco, o estoque é consultado e decrementado **
 Long remaining = redisTemplate.opsForValue().decrement("stock:batch:" + batchId, quantity);
 
 if (remaining == null || remaining < 0) {
-    // Estoque insuficiente — reverte o decremento e falha rápido
+    // Estoque insuficiente, reverte o decremento e falha rápido
     redisTemplate.opsForValue().increment("stock:batch:" + batchId, quantity);
     throw new InsufficientStockException("Ingressos esgotados.");
 }
@@ -73,7 +73,7 @@ O Redis opera em memória e processa centenas de milhares de operações por seg
 
 ---
 
-### 2. 🔒 Segunda Linha de Defesa — Pessimistic Lock no Banco
+### 2. 🔒 Segunda Linha de Defesa: Pessimistic Lock no Banco
 
 Mesmo com o Redis, a persistência final acontece no PostgreSQL com `SELECT FOR UPDATE`. Isso garante que, se dois processos passarem pela camada Redis simultaneamente (em caso de falha de sincronização), apenas um deles conseguirá escrever.
 
@@ -83,7 +83,7 @@ Mesmo com o Redis, a persistência final acontece no PostgreSQL com `SELECT FOR 
 Optional<Batch> findByIdWithLock(@Param("id") UUID id);
 ```
 
-**Pessimista vs. Otimista — por que pessimista aqui?**
+**Pessimista vs. Otimista: por que pessimista aqui?**
 
 | Estratégia | Melhor para | Risco |
 |---|---|---|
@@ -94,9 +94,9 @@ Em um pico de vendas de ingressos, a **contenção é extremamente alta** — ce
 
 ---
 
-### 3. ⚛️ Atomicidade — Tudo ou Nada
+### 3. ⚛️ Atomicidade: Tudo ou Nada
 
-A redução de estoque e a criação do registro de compra acontecem dentro de uma única transação `@Transactional`. Se o registro da venda falhar após a redução de estoque, o banco volta ao estado anterior automaticamente — e o Redis é compensado.
+A redução de estoque e a criação do registro de compra acontecem dentro de uma única transação `@Transactional`. Se o registro da venda falhar após a redução de estoque, o banco volta ao estado anterior automaticamente, e o Redis é compensado.
 
 ```
 BEGIN TRANSACTION
@@ -107,7 +107,7 @@ COMMIT ✅  ou  ROLLBACK ↩️ + compensação Redis
 
 ---
 
-### 4. 🔁 Resiliência — `@Retryable` para Falhas Momentâneas
+### 4. 🔁 Resiliência: `@Retryable` para Falhas Momentâneas
 
 Timeouts de banco de dados acontecem. Em vez de falhar para o usuário, o sistema tenta novamente com backoff exponencial para falhas transitórias.
 
@@ -126,7 +126,7 @@ public PurchaseResponse purchase(PurchaseRequest request) { ... }
 
 | Camada | Tecnologia | Função |
 |---|---|---|
-| Linguagem | Java 17 | — |
+| Linguagem | Java 17 | Core da linguagem |
 | Framework | Spring Boot 3.x | Core da aplicação |
 | Banco de Dados | PostgreSQL | Persistência e consistência ACID |
 | Cache / Lock | Redis | Fast Fail, cache de estoque |
@@ -179,7 +179,7 @@ A aplicação estará disponível em → `http://localhost:8080`
 |---|---|---|
 | `POST` | `/events/{id}/batches` | Adiciona um lote de ingressos ao evento |
 
-### Compra — O Core do Sistema
+### Compra: O Core do Sistema
 
 ```
 POST /tickets/purchase
